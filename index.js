@@ -17,30 +17,33 @@ module.exports = DES
 inherits(DES, CipherBase)
 function DES (opts) {
   CipherBase.call(this)
-  var modeName = opts.mode.toLowerCase()
-  var mode = modes[modeName]
-  var type
-  if (opts.decrypt) {
-    type = 'decrypt'
-  } else {
-    type = 'encrypt'
+  if (opts.mode) {
+    var modeName = opts.mode.toLowerCase()
+    var mode = modes[modeName]
+    if (!mode) return
+    var type
+    if (opts.decrypt) {
+      type = 'decrypt'
+    } else {
+      type = 'encrypt'
+    }
+    var key = opts.key
+    if (!Buffer.isBuffer(key)) {
+      key = Buffer.from(key)
+    }
+    if (modeName === 'des-ede' || modeName === 'des-ede-cbc') {
+      key = Buffer.concat([key, key.slice(0, 8)])
+    }
+    var iv = opts.iv
+    if (!Buffer.isBuffer(iv)) {
+      iv = Buffer.from(iv)
+    }
+    this._des = mode.create({
+      key: key,
+      iv: iv,
+      type: type
+    })
   }
-  var key = opts.key
-  if (!Buffer.isBuffer(key)) {
-    key = Buffer.from(key)
-  }
-  if (modeName === 'des-ede' || modeName === 'des-ede-cbc') {
-    key = Buffer.concat([key, key.slice(0, 8)])
-  }
-  var iv = opts.iv
-  if (!Buffer.isBuffer(iv)) {
-    iv = Buffer.from(iv)
-  }
-  this._des = mode.create({
-    key: key,
-    iv: iv,
-    type: type
-  })
 }
 DES.prototype._update = function (data) {
   return Buffer.from(this._des.update(data))
